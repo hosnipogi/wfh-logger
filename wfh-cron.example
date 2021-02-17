@@ -1,4 +1,4 @@
-# Important!! Crontab requires newline before EOF to install. Leave two empty new lines at end in this file.
+# Important!! Crontab requires newline before EOF to install. Leave two empty new lines at the end of this file.
 # * * * * * /usr/local/bin/node /app/dist/index.js >> /var/log/cron.log
 * * * * * echo $(date) >> /var/log/cron.log
 
