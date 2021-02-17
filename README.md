@@ -6,31 +6,31 @@ Simple Chromium based puppeteer app <span style="font-size: 6px">to automate WFH
 
 ## Steps
 
-1. Clone and cd into repository
+1.  Clone and cd into repository
 
     `mkdir wfh && cd wfh && git clone repo .`
 
-2. Install package repository
+2.  Install package repository
 
     `npm install`
 
-3. Create .env file and input creds.
+3.  Create .env file and input creds.
 
     `cp .env.example .env`
 
-4. Edit WFH schedule in located in:
+4.  Edit WFH schedule in:
 
         src/schedule.json
 
-5. Run typescript.
+5.  Run typescript.
 
     `npx tsc`
 
-6. Create cron job file.
+6.  Create cron job file.
 
     `cp wfh-cron.example wfh-cron`
 
-7. Build docker image and start container:
+7.  Build docker image and start container:
 
     `docker build --tag $(whoami):wfh . && docker run -dit -v $(pwd):/app --name wfh $(whoami):wfh`
 
@@ -55,6 +55,10 @@ Either way will work:
     then build with
 
     `docker exec wfh npx tsc`
+
+### Updating Cron Job
+
+`docker exec wfh crontab wfh-cron`
 
 ---
 
