@@ -1,0 +1,3 @@
+# Important!! Add 2 new line after command, cron fails silently without EOF new line
+# * * * * * /usr/local/bin/node /app/dist/index.js >> /var/log/cron.log
+* * * * * echo $(date) >> /var/log/cron.log

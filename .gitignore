@@ -1,0 +1,11 @@
+.*
+.env
+!.env.example
+!.gitignore
+node_modules/
+*.log
+schedule.ts
+delete*
+wfh-cron
+logs/
+dist/
