@@ -1,3 +1,4 @@
-# Important!! Add 2 new line after command, cron fails silently without EOF new line
+# Important!! Crontab requires newline before EOF to install. Leave two empty new lines at end in this file.
 # * * * * * /usr/local/bin/node /app/dist/index.js >> /var/log/cron.log
 * * * * * echo $(date) >> /var/log/cron.log
+
