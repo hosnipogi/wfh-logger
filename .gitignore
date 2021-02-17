@@ -2,10 +2,9 @@
 .env
 !.env.example
 !.gitignore
+!.dockerignore
 node_modules/
 *.log
-schedule.ts
-delete*
 wfh-cron
 logs/
 dist/
