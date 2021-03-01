@@ -3,6 +3,7 @@ import { Months, Days } from "./enums";
 import logger from "./logger";
 import path from "path";
 import sched from "./schedule.json";
+import os from "os";
 
 require("dotenv").config({
     path: path.resolve(__dirname, "../.env"),
@@ -55,16 +56,23 @@ const MESSAGE_TEMP = `TIME ${
     hour === 7 ? `IN 36.${Math.floor(Math.random() * 10)}` : "OUT"
 }`;
 
+// check if running on a raspberry pi (arm)
+
+const browserOptions =
+    os.arch() === "x64"
+        ? {}
+        : {
+              executablePath: "/usr/bin/chromium",
+              args: ["--no-sandbox"],
+              // headless: false,
+          };
+
 async function main(options: Options) {
     let loginCount = 0;
 
     const { Email, Password, ChatURL } = options;
 
-    const browser = await puppeteer.launch({
-        executablePath: "/usr/bin/chromium",
-        args: ["--no-sandbox"],
-        // headless: false,
-    });
+    const browser = await puppeteer.launch(browserOptions);
     const page = await browser.newPage();
 
     try {
