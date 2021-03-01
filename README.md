@@ -8,7 +8,7 @@ Simple Chromium based puppeteer app <span style="font-size: 6px">to automate WFH
 
 1.  Clone and cd into repository
 
-    `mkdir wfh && cd wfh && git clone repo .`
+    `git clone https://github.com/hosnipogi/wfh-logger && cd wfh-logger`
 
 2.  Install package repository
 
@@ -36,7 +36,7 @@ Simple Chromium based puppeteer app <span style="font-size: 6px">to automate WFH
 
 ### Run Steps 1-6 in One Line
 
-`git clone [path-to-file] && cd wfh && cp .env.example .env && cp wfh-cron.example wfh-cron`
+`git clone https://github.com/hosnipogi/wfh-logger && cd wfh-logger && cp .env.example .env && cp wfh-cron.example wfh-cron`
 
 ---
 
@@ -64,6 +64,6 @@ Either way will work:
 
 ### Additional Notes
 
-If you plan to run this without docker, remove options arg from puppeteer's launch method in `src/index.ts` (or configure path to your browser).
+If you plan to run this without docker, remove options arg from puppeteer's launch method in `src/index.ts`:
 
     const browser = await puppeteer.launch();
