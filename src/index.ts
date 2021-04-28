@@ -4,6 +4,8 @@ import logger from "./logger";
 import path from "path";
 import sched from "./schedule.json";
 import os from "os";
+import authenticate from "./authenticate";
+import axios from "axios";
 
 require("dotenv").config({
     path: path.resolve(__dirname, "../.env"),
@@ -31,8 +33,17 @@ const ChatURL = process.env.FACEBOOK_CHAT_URL;
 const Email = process.env.FACEBOOK_EMAIL;
 const Password = process.env.FACEBOOK_PASSWORD;
 const FULLNAME = process.env.FACEBOOK_FULLNAME;
+const GROUPCHATNAME = process.env.GROUPCHAT_NAME;
 
-if (!ChatURL || !Email || !Password || !FULLNAME) {
+// 3rd Party Push Notifications -------------------------- //
+
+const PUSHOVER_URL = process.env.PUSHOVER_URL;
+const PUSHOVER_TOKEN = process.env.PUSHOVER_TOKEN;
+const PUSHOVER_USER = process.env.PUSHOVER_USER;
+
+// -------------------------------------------------------//
+
+if (!ChatURL || !Email || !Password || !FULLNAME || !GROUPCHATNAME) {
     logger.error("Please check ENV");
     process.exit(1);
 }
@@ -68,8 +79,6 @@ const browserOptions =
           };
 
 async function main(options: Options) {
-    let loginCount = 0;
-
     const { Email, Password, ChatURL } = options;
 
     const browser = await puppeteer.launch(browserOptions);
@@ -86,65 +95,46 @@ async function main(options: Options) {
             timeout: 65000,
         });
 
-        while (
-            (await page.$("input#email[name=email]")) &&
-            (await page.$("input#pass[name=pass]"))
-        ) {
-            if (loginCount === 3) throw new Error("Cannot login");
-            loginCount++;
-            if (loginCount > 1) {
-                logger.error(`Login retries: ${loginCount - 1}`);
-                await page.screenshot({
-                    path: path.resolve(
-                        __dirname +
-                            `/../logs/step1-${imgNameFormat}-login_retry_count-${
-                                loginCount - 1
-                            }.png`
-                    ),
-                });
-            }
+        await authenticate({
+            page,
+            logger,
+            Email,
+            Password,
+            imgNameFormat,
+        });
 
-            await page.waitForTimeout(4000);
-            const emailField = await page.$("input#email[name=email]");
-            const passwordField = await page.$("input#pass[name=pass]");
-            const submitButton = await page.$("button[name=login]");
+        logger.info(`${Email} logged in.`);
 
-            if (!emailField || !passwordField || !submitButton) {
-                throw new Error("Cannot find node Email|Pass|Submit");
-            }
+        const chatInputSelector = "div._1p1t";
+        const groupChatSelector =
+            "div.rq0escxv.l9j0dhe7.du4w35lb.j83agx80.cbu4d94t.pfnyh3mw.d2edcug0.bp9cbjyn.hv4rvrfc.dati1w0a.jb3vyjys.ihqw7lf3";
+        logger.info("Trying to open chat..");
 
-            await emailField.type(Email, {
-                delay: 180,
-            });
-            await passwordField.type(Password, {
-                delay: 180,
-            });
-
-            await Promise.all([
-                page.waitForNavigation({
-                    waitUntil: "domcontentloaded",
-                }),
-                submitButton.click(),
-            ]);
-
+        try {
             await page.goto(ChatURL, {
                 waitUntil: ["networkidle2", "load"],
                 timeout: 65000,
             });
-        }
+            await page.waitForSelector(groupChatSelector, {
+                timeout: 65000,
+            });
 
-        logger.info(`${Email} logged in.`);
+            const wrongGroupChatCheck = await page.$eval(
+                groupChatSelector,
+                (node, name) => {
+                    // must return since throwing will throw in the puppeteer instance console and not the main process
+                    const title = (node as HTMLElement).innerText;
+                    return !title ||
+                        title === "Facebook User" ||
+                        !new RegExp(name as string).test(title)
+                        ? 1
+                        : 0;
+                },
+                GROUPCHATNAME!
+            );
 
-        await page.screenshot({
-            path: path.resolve(
-                __dirname + `/../logs/step2-${imgNameFormat}-logged_in.png`
-            ),
-        });
+            if (wrongGroupChatCheck) throw "Wrong group chat";
 
-        const chatInputSelector = "div._1p1t";
-        logger.info("Trying to open chat..");
-
-        try {
             await page.waitForSelector(chatInputSelector, {
                 timeout: 65000,
             });
@@ -152,15 +142,11 @@ async function main(options: Options) {
         } catch (error) {
             await page.screenshot({
                 path: path.resolve(
-                    __dirname + `/../logs/step2-${imgNameFormat}-error.png`
+                    __dirname +
+                        `/../logs/step2-${imgNameFormat}-error-${error}.png`
                 ),
             });
-            throw new Error(
-                JSON.stringify({
-                    msg: "Chat did not load",
-                    error,
-                })
-            );
+            throw new Error(`Chat did not load due: ${error}`);
         }
 
         const chatInput = await page.$(chatInputSelector);
@@ -205,9 +191,22 @@ async function main(options: Options) {
         logger.error(e);
         await page.screenshot({
             path: path.resolve(
-                __dirname + `/../logs/step1-${imgNameFormat}-error.png`
+                __dirname + `/../logs/final-${imgNameFormat}-error.png`
             ),
         });
+
+        if (PUSHOVER_URL && PUSHOVER_TOKEN && PUSHOVER_USER) {
+            await axios.post(PUSHOVER_URL, {
+                token: PUSHOVER_TOKEN,
+                user: PUSHOVER_USER,
+                message: JSON.stringify({
+                    app: e.service,
+                    timestamp: e.timestamp,
+                    message: e.message,
+                }),
+                title: "Davao APP AWA BOT",
+            });
+        }
         await browser.close();
     }
 }

@@ -4,6 +4,7 @@
     "main": "index.js",
     "license": "MIT",
     "dependencies": {
+        "axios": "^0.21.1",
         "puppeteer": "^7.0.4",
         "winston": "^3.3.3"
     },
